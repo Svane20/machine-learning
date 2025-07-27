@@ -1,0 +1,93 @@
+# @package _global_
+
+type: "supervised"
+experiment_name: "Demo"
+show_progress: True
+max_epochs: 50
+batch_size: 32
+loader_workers: 4
+
+dataset:
+  train:
+    _target_: "datasets.example.ExampleDataset"
+    split: "train"
+    do_normalize: true
+    do_augment: true
+    normalize_mean: [ 0.5, 0.5, 0.5 ]
+    normalize_std: [ 0.5, 0.5, 0.5 ]
+  val:
+    _target_: "datasets.example.ExampleDataset"
+    split: "val"
+    do_normalize: true
+    do_augment: false
+    normalize_mean: [ 0.5, 0.5, 0.5 ]
+    normalize_std: [ 0.5, 0.5, 0.5 ]
+  test:
+    _target_: "datasets.example.ExampleDataset"
+    split: "test"
+    do_normalize: true
+    do_augment: false
+    normalize_mean: [ 0.5, 0.5, 0.5 ]
+    normalize_std: [ 0.5, 0.5, 0.5 ]
+
+model:
+  _target_: "models.example.ExampleModel"
+  scale_factor: 2
+  in_channels: 3
+  out_channels: 3
+  hidden_channels: 32
+  num_layers: 4
+  norm_groups: 4
+
+pipeline:
+  seed: null
+
+  amp:
+    enabled: true
+    type: "fp16"
+  dynamo:
+    enabled: false
+    use_regional_compilation: false
+    backend: "inductor"
+    mode: "default"
+    fullgraph: true
+    dynamic: false
+  gradient_accumulation:
+    gradient_accumulation_steps: 2
+  scheduler:
+    type: "cosine"
+    end_value: 1e-7
+    warmup_steps: 2
+  optimizer:
+    _target_: "torch.optim.AdamW"
+    lr: 3e-4
+
+losses:
+  L1:
+    _target_: "torch.nn.L1Loss"
+    weight: 1
+
+validation:
+  event: "epoch_completed"
+
+  metrics:
+    SSIM:
+      _target_: "torchmetrics.image.StructuralSimilarityIndexMeasure"
+      data_range: 1.0
+    PSNR:
+      _target_: "torchmetrics.image.PeakSignalNoiseRatio"
+      data_range: 1.0
+
+checkpoints:
+  - num_saved: 3
+    interval:
+      event: "iteration_completed"
+      every: 1000
+  - num_saved: 1
+    mode: "max"
+    metric: "SSIM"
+
+logging:
+  dir: "logs"
+  strategy: "steps"
+  every: 500
