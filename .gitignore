@@ -165,6 +165,12 @@ cython_debug/
 venv
 
 # Example projects
+examples/*/data
+examples/*/wandb
+examples/*/logs
+examples/*/checkpoints
+
+# Projects
 projects/*/wandb
 projects/*/logs
 projects/*/checkpoints
